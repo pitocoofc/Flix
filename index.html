@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+
+<!-- ================= META / CONFIG ================= -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOOSTFLIX</title>
+
+<style>
+
+/* ================= GLOBAL ================= */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #141414;
+  color: #fff;
+}
+
+/* ================= HEADER ================= */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background-color: #1c1c1c;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+header h1 {
+  color: #e50914;
+  margin: 0;
+}
+
+/* ================= SEARCH ================= */
+.search-container input {
+  display: none;
+  padding: 6px;
+  border-radius: 4px;
+  border: none;
+}
+
+.search-container button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* ================= HERO ================= */
+.hero {
+  width: 100%;
+  height: 55vh;
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+}
+
+.hero-info {
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  width: 100%;
+  padding: 30px;
+}
+
+.hero-info h2 {
+  margin: 0;
+  font-size: 32px;
+}
+
+.hero-info button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  background: #e50914;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+/* ================= ROW / RECOMENDAÇÕES ================= */
+.row {
+  padding: 20px;
+}
+
+.row h3 {
+  margin-bottom: 10px;
+}
+
+.row-videos {
+  display: flex;
+  gap: 15px;
+}
+
+/* ================= VIDEO CARD ================= */
+.video-card {
+  background: #222;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.video-card:hover {
+  transform: scale(1.05);
+}
+
+.video-card img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+
+.video-info {
+  padding: 8px;
+  font-size: 14px;
+}
+
+/* ================= GRID ================= */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px,1fr));
+  gap: 15px;
+  padding: 20px;
+}
+
+/* ================= PLAYER ================= */
+#player-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+#player-overlay iframe {
+  width: 85%;
+  height: 60%;
+}
+
+#player-overlay button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background: #e50914;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- ================= HEADER ================= -->
+<header>
+  <h1>BOOSTFLIX</h1>
+  <div class="search-container">
+    <button id="search-btn">🔍</button>
+    <input type="text" id="search-input" placeholder="Pesquisar...">
+  </div>
+</header>
+
+<!-- ================= HERO ================= -->
+<div class="hero" id="hero">
+  <div class="hero-info">
+    <h2 id="hero-title"></h2>
+    <button id="hero-play">Assistir</button>
+  </div>
+</div>
+
+<!-- ================= RECOMENDAÇÕES ================= -->
+<section class="row">
+  <h3>Recomendações</h3>
+  <div class="row-videos" id="row-videos"></div>
+</section>
+
+<!-- ================= TODOS OS VÍDEOS ================= -->
+<section>
+  <h3 style="padding-left:20px">Todos os vídeos</h3>
+  <div class="grid" id="all-videos"></div>
+</section>
+
+<!-- ================= PLAYER ================= -->
+<div id="player-overlay">
+  <iframe id="player" allow="autoplay; fullscreen" allowfullscreen></iframe>
+  <button onclick="closePlayer()">Sair</button>
+</div>
+
+<script>
+
+/* ================= DADOS ================= */
+const videos = [
+  {
+    id: '76979871',
+    title: 'Video Animador',
+    thumbnail: 'https://i.vimeocdn.com/video/452001751_640.jpg',
+    tags: ['animado','anime'],
+    description: 'Vídeo para animadores'
+  },
+  {
+    id: '22439234',
+    title: 'Video Aventura',
+    thumbnail: 'https://i.vimeocdn.com/video/130129625_640.jpg',
+    tags: ['aventura'],
+    description: 'Ação e aventura'
+  },
+  {
+    id: '146022717',
+    title: 'Video Arte',
+    thumbnail: 'https://i.vimeocdn.com/video/585860558_640.jpg',
+    tags: ['arte'],
+    description: 'Arte visual'
+  },
+  {
+    id: '76979871',
+    title: 'Video Música',
+    thumbnail: 'https://i.vimeocdn.com/video/452001751_640.jpg',
+    tags: ['musica'],
+    description: 'Som relaxante'
+  }
+];
+
+/* ================= ELEMENTOS ================= */
+const hero = document.getElementById('hero');
+const heroTitle = document.getElementById('hero-title');
+const heroPlay = document.getElementById('hero-play');
+const rowVideos = document.getElementById('row-videos');
+const allVideos = document.getElementById('all-videos');
+const player = document.getElementById('player');
+const overlay = document.getElementById('player-overlay');
+
+/* ================= HERO ALEATÓRIO ================= */
+const featured = videos[Math.floor(Math.random() * videos.length)];
+hero.style.backgroundImage = `url(${featured.thumbnail})`;
+heroTitle.textContent = featured.title;
+heroPlay.onclick = () => openPlayer(featured);
+
+/* ================= LINHA DE 3 ================= */
+videos.slice(0,3).forEach(v => {
+  rowVideos.appendChild(createCard(v));
+});
+
+/* ================= GRID ================= */
+videos.forEach(v => {
+  allVideos.appendChild(createCard(v));
+});
+
+/* ================= CARD ================= */
+function createCard(video){
+  const div = document.createElement('div');
+  div.className = 'video-card';
+  div.innerHTML = `
+    <img src="${video.thumbnail}">
+    <div class="video-info">${video.title}</div>
+  `;
+  div.onclick = () => openPlayer(video);
+  return div;
+}
+
+/* ================= PLAYER ================= */
+function openPlayer(video){
+  player.src = `https://player.vimeo.com/video/${video.id}?autoplay=1`;
+  overlay.style.display = 'flex';
+}
+
+function closePlayer(){
+  player.src = '';
+  overlay.style.display = 'none';
+}
+
+/* ================= BUSCA ================= */
+const searchBtn = document.getElementById('search-btn');
+const searchInput = document.getElementById('search-input');
+
+searchBtn.onclick = () => {
+  searchInput.style.display =
+    searchInput.style.display === 'block' ? 'none' : 'block';
+};
+
+searchInput.oninput = () => {
+  const q = searchInput.value.toLowerCase();
+  allVideos.innerHTML = '';
+  videos
+    .filter(v => v.title.toLowerCase().includes(q) || v.tags.join().includes(q))
+    .forEach(v => allVideos.appendChild(createCard(v)));
+};
+
+</script>
+
+</body>
+</html>
